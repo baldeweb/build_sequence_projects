@@ -2,6 +2,7 @@
 
 projectPath=""
 buildVariantTarget=""
+projPath=""
 
 listCountries=(
     "name=Argentina#code=Ar"
@@ -37,8 +38,6 @@ listProjectName=(
     "bees-android/bees-actions"
     "bees-customer-services-android/customer_services"
 )
-
-listChosenProjects=()
 
 #   Project @aar reference
 customerServicesRef="implementation \"com.abinbev:customer_services:"
@@ -121,10 +120,9 @@ function run_adb_install {
     clear
     show_bees_banner
 
-    echo -n "\n"
     echo -e "\e[1m\e[33mPROCESS COMPLETED WITH TOTAL SUCCESS! BzZzzZzzz...\e[0m"
-    echo -e "\e[1mOpen your app manually and enjoy it! \(^^)/ \e[0m"
-    echo -e "\e[3m(A bug free version... I hope...)\e[0m"
+    echo -e "\e[3m(A bug free version... I hope...)\e[0m\n"
+    echo -e "\e[1mNow, open your app manually and enjoy it! \(^^)/ \e[0m"
 
     exit 0
 }
@@ -398,30 +396,36 @@ function change_version_by_project_name {
 }
 
 function find_project_folder_path_by_project_name {
-    folderNameTarget=$1
+    local folderNameTarget=$1
 
-    list_folder_found=$(find / -type d -name "$folderNameTarget" 2>/dev/null)
-
-    if [ -z "$list_folder_found" ]; then
+    local listFolder=$(find / -type d -name "$folderNameTarget" -print0 2>/dev/null | xargs -0 printf "%s\n")
+    if [ -z "$listFolder" ]; then
+        echo -e "\n\e[33mFolder [$folderNameTarget] not found.\e[0m"
         exit 1
-    fi
-
-    num_pastas=$(echo "$list_folder_found" | wc -l)
-    if [ "$num_pastas" -eq 1 ]; then
-        path=$(echo "$list_folder_found")
-        echo $path
+    elif [ $(echo "$listFolder" | wc -l) -eq 1 ]; then
+        projPath="$listFolder"
     else
-        echo "$num_pastas folders with the name $folderNameTarget:"
-        echo "$list_folder_found"
-        echo "Choose the correct folder:"
-        read num_pasta
-        path=$(echo "$list_folder_found" | sed "${num_pasta}q;d")
-        if [ -z "$path" ]; then
-            echo "Invalid Option. Finishing."
-            exit 1
-        fi
+        echo -e "\e[1mMore than 1 folder was found\e[0m"
+        i=1
+        IFS=$'\n'
+        for folder in $listFolder; do
+            echo "[$i] $folder"
+            ((i++))
+        done
 
-        echo $path
+        echo -n -e "\n\e[33m> Select the correct to follow:\e[0m"
+        read optionChosen
+
+        folderPath=""
+        y=1
+        for folder in $listFolder; do
+            if [ $y = $optionChosen ];then
+                folderPath=$folder
+            fi
+            ((y++))
+        done
+
+        projPath="$folderPath"
     fi
 }
 
@@ -437,16 +441,17 @@ function input_new_version_name {
 
     for number in $listProjects; do
         index=$(($number-1))
-        projectPathSubFolder="${listProjectName[index]}"
-        projectRootName=$(get_project_name $projectPathSubFolder)
-        path=$(find_project_folder_path_by_project_name "$projectRootName")
-        projectPath="$path"
-        name=$(echo $path | awk -F/ '{print $NF}')
+        local projectPathSubFolder="${listProjectName[index]}"
+        local projectRootName=$(get_project_name $projectPathSubFolder)
+
+        echo -e "\n\e[3mPlease, wait...\nI'm looking for the folder called '$projectRootName' in your system...\e[0m\n"
+        find_project_folder_path_by_project_name "$projectRootName"
+        name=$(echo $projPath | awk -F/ '{print $NF}')
         gradlePath=$(get_build_gradle_subfolder_path $projectPathSubFolder)
 
-        run_specs "$path" "$name"
-        change_version_by_project_name "$path" "$projectPathSubFolder" "$name"
-        run_gradle "$path" "$gradlePath" "$name"
+        run_specs "$projPath" "$name"
+        change_version_by_project_name "$projPath" "$projectPathSubFolder" "$name"
+        run_gradle "$projPath" "$gradlePath" "$name"
 
         echo -e "\n"
     done
