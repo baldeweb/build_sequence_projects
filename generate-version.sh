@@ -1,6 +1,5 @@
 #!/bin/bash
 
-projectPath=""
 buildVariantTarget=""
 projPath=""
 
@@ -38,6 +37,8 @@ listProjectName=(
     "bees-android/bees-actions"
     "bees-customer-services-android/customer_services"
 )
+
+listProjectChosen=()
 
 #   Project @aar reference
 customerServicesRef="implementation \"com.abinbev:customer_services:"
@@ -123,7 +124,7 @@ function run_adb_install {
 
     echo -e "\e[1m\e[33mPROCESS COMPLETED WITH TOTAL SUCCESS! BzZzzZzzz...\e[0m"
     echo -e "\e[3m(A bug free version... I hope...)\e[0m\n"
-    echo -e "\e[1mNow, open your app manually and enjoy it! \(^^)/ \e[0m"
+    echo -e "\e[1mNow, open your app manually and enjoy it! \(^^)/ \e[0m\n"
 
     exit 0
 }
@@ -288,7 +289,7 @@ function run_specs {
 
     if [ -z "$specsBranchName" ]; then
         specsBranchName="master"
-        echo -e "\e[32mBranch 'MASTER' chosen.\e[0m"
+        echo -e "\e[32mBranch 'master' chosen.\e[0m"
     else
         echo -e "\e[32mBranch $specsBranchName chosen.\e[0m"
     fi
@@ -300,7 +301,7 @@ function run_specs {
     git reset --hard origin/$specsBranchName
     cd ..
 
-    echo -e "\e[1m\e[32mspecs routines: Success ✓\e[0m\n"
+    echo -e "\e[1m\e[32mSpecs Routines: Success ✓\e[0m\n"
 }
 
 function change_dependency_version {
@@ -308,7 +309,7 @@ function change_dependency_version {
     local dependencyRef=$2
     local name=$(get_dependency_name $dependencyRef)
 
-    echo -n -e "\e[33m> dependency version of [${name#*/}]: \e[0m"
+    echo -n -e "\e[33m> dependency version of [${name#*/}](or just press ENTER to skip): \e[0m"
     read newVersion
 
     local currentLine="def $dependencyRef = \".*\""
@@ -327,9 +328,8 @@ function change_dependency_version {
 
 function menu_change_implementation_version {
     local gradleFilePath="$1/build.gradle"
-    echo "GRADLE FILE PATH: $gradleFilePath"
 
-    echo -e "\n\e[1miImplementation List\e[0m"
+    echo -e "\n\e[1mImplementation List\e[0m"
 
     i=0
     while read -r line; do
@@ -341,38 +341,37 @@ function menu_change_implementation_version {
 
     if [ $i -eq 0 ]; then
         echo -e "\e[33mNo occurrences found.\nIgnore if this project needs no changes, or open and edit it manually.\e[0m"
-        exit 1
-    fi
-
-    echo -n -e "\n\e[33m> choose an option: \e[0m"
-    read implementationOption
-
-    if [ -n "$implementationOption" ]; then
-        echo -n -e "\n\e[33m> new implementation version: \e[0m"
-        read newVersion
-
-        for ((i = 1; i <= ${#linesArray[@]}; i++)); do
-            if [ $implementationOption = $i ]; then
-                line=${linesArray[$i]}
-                lineBeforeColon="${line%:*}:"
-                prefix=$(echo "$lineBeforeColon" | grep -o "*['\"].*com")
-                result=$(echo "$prefix$lineBeforeColon$newVersion\"" | sed "s/'/\"/g")
-                sed -i "s/$line/$result/g" "$gradleFilePath"
-            fi
-        done
     else
-        echo -e "\e[33mNothing to update here. Moving next.\e[0m"
+        echo -n -e "\n\e[33m> choose an option(or just press ENTER to skip): \e[0m"
+        read implementationOption
+
+        if [ -n "$implementationOption" ]; then
+            echo -n -e "\n\e[33m> new implementation version(or just press ENTER to skip): \e[0m"
+            read newVersion
+
+            for ((i = 1; i <= ${#linesArray[@]}; i++)); do
+                if [ $implementationOption = $i ]; then
+                    line=${linesArray[$i]}
+                    lineBeforeColon="${line%:*}:"
+                    prefix=$(echo "$lineBeforeColon" | grep -o "*['\"].*com")
+                    result=$(echo "$prefix$lineBeforeColon$newVersion\"" | sed "s/'/\"/g")
+                    sed -i "s/$line/$result/g" "$gradleFilePath"
+                fi
+            done
+        else
+            echo -e "\e[33mNothing to update here. Moving next.\e[0m"
+        fi
     fi
 }
 
 function change_version_name {
     local projectFullPath=$1
 
-    echo -n -e "\e[33m> versionName [$name]: \e[0m"
+    echo -n -e "\e[33m> versionName [$name](or just press ENTER to skip): \e[0m"
     read newVersionName
 
     if [ -z "$newVersionName" ]; then
-        echo -e "\e[33m> Version not updated. Keeping the current version.\e[0m"
+        echo -e "\e[33mVersion not updated. Keeping the current version.\e[0m\n"
     else
         local file="$projectFullPath/build.gradle"
         local line=$(grep -n "^versionName " "$file" | cut -d ":" -f1)
@@ -404,9 +403,9 @@ function change_version_by_project_name {
 function find_project_folder_path_by_project_name {
     local folderNameTarget=$1
 
-    local listFolder=$(find / -type d -name "$folderNameTarget" -print0 2>/dev/null | xargs -0 printf "%s\n")
+    local listFolder=$(find /home -type d -name "$folderNameTarget" -print0 2>/dev/null | xargs -0 printf "%s\n")
     if [ -z "$listFolder" ]; then
-        echo -e "\n\e[33mFolder [$folderNameTarget] not found.\e[0m"
+        echo -e "\n\e[33mFolder not found.\e[0m"
         exit 1
     elif [ $(echo "$listFolder" | wc -l) -eq 1 ]; then
         projPath="$listFolder"
@@ -435,47 +434,49 @@ function find_project_folder_path_by_project_name {
     fi
 }
 
-function input_new_version_name {
-    echo -n -e "\e[33m> Project Numbers: \e[0m"
-    read listProjects
-
-    # Save current inner field separator
-    OLDIFS=$IFS
-
-    # Set inner field separator to comma
-    IFS=,
-
-    for number in $listProjects; do
-        index=$(($number-1))
+function build_projects_queue {
+    for number in $(echo "$listProjectChosen" | tr ',' ' '); do
+        local index=$((number - 1))
         local projectPathSubFolder="${listProjectName[index]}"
-        local projectRootName=$(get_project_name $projectPathSubFolder)
+        local projectRootName=$(get_project_name "$projectPathSubFolder")
 
-        echo -e "\n\e[3mPlease, wait...\nI'm looking for the folder called '$projectRootName' in your system...\e[0m\n"
+        printf '\n\e[3mPlease, wait...\nLooking for the folder name '\''%s'\'' in your system...\e[0m\n\n' "$projectRootName"
         find_project_folder_path_by_project_name "$projectRootName"
-        name=$(echo $projPath | awk -F/ '{print $NF}')
-        gradlePath=$(get_build_gradle_subfolder_path $projectPathSubFolder)
 
-        #run_specs "$projPath" "$name"
-        change_version_by_project_name "$projPath" "$projectPathSubFolder" "$name"
-        #run_gradle "$projPath" "$gradlePath" "$name"
-
-        echo -e "\n"
+        local name=$(basename "$projPath")
+        local gradlePath=$(get_build_gradle_subfolder_path "$projectPathSubFolder")
+        
+        run_gradle "$projPath" "$gradlePath" "$name"
     done
+}
 
-    # Restore the original inner field separator
-    IFS=$OLDIFS
+function input_new_version_name {
+    read -p $'\e[33m> Project Numbers: \e[0m' listProjects
+    listProjectChosen=$listProjects
+
+    for number in $(echo "$listProjects" | tr ',' ' '); do
+        local index=$((number-1))
+        local projectPathSubFolder="${listProjectName[index]}"
+        local projectRootName=$(get_project_name "$projectPathSubFolder")
+
+        printf '\n\e[3mPlease, wait... Looking for the folder name '\''%s'\''..\e[0m\n\n' "$projectRootName"
+        find_project_folder_path_by_project_name "$projectRootName"
+
+        local name=$(basename "$projPath")
+        local gradlePath=$(get_build_gradle_subfolder_path "$projectPathSubFolder")
+    
+        run_specs "$projPath" "$name"
+        change_version_by_project_name "$projPath" "$projectPathSubFolder" "$name"
+    done
 }
 
 function menu_show_list_projects {
-    echo -e "\e[1mChoose your projects, IN SEQUENCE, separed by comma\e[0m"
+    echo -e "\e[1mChoose your projects, IN SEQUENCE, separated by comma\e[0m"
     echo -e "e.g: \e[1m4,2,3\e[0m"
     for i in "${!listProjectName[@]}"; do
-        index=$(($i+1))
-
-        projName=$(get_project_name ${listProjectName[$i]})
-        echo "[$index] $projName"
+        echo "[$((i+1))] $(get_project_name "${listProjectName[$i]}")"
     done
-    echo -e "\n"
+    echo
 }
 
 function show_bees_banner {
@@ -494,3 +495,4 @@ function show_bees_banner {
 show_bees_banner
 menu_show_list_projects
 input_new_version_name
+build_projects_queue
