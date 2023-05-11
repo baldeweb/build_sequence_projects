@@ -1,6 +1,8 @@
 #!/bin/bash
 
-buildVariantTarget=""
+environmentCode=""
+countryName=""
+countryCode=""
 projPath=""
 
 listCountries=(
@@ -97,10 +99,10 @@ function get_country_code {
 }
 
 function run_adb_install {
-    countryName=$(echo "$1" | tr '[:upper:]' '[:lower:]')
-    countryCode=$(echo "$2" | tr '[:upper:]' '[:lower:]')
-    envCode=$(echo "$3" | tr '[:upper:]' '[:lower:]')
-    apkPath="$rootPathApkGenerated$countryCode/$envCode/app-$countryCode-$envCode.apk"
+    countryName=$(echo "$countryName" | tr '[:upper:]' '[:lower:]')
+    countryCode=$(echo "$countryCode" | tr '[:upper:]' '[:lower:]')
+    environmentCode=$(echo "$environmentCode" | tr '[:upper:]' '[:lower:]')
+    apkPath="$rootPathApkGenerated$countryCode/$environmentCode/app-$countryCode-$environmentCode.apk"
     appPackageName="com.abinbev.android.tapwiser.bees"
 
     countryCode=$(to_lowercase $countryCode)
@@ -108,16 +110,9 @@ function run_adb_install {
 
     ./gradlew -Dorg.gradle.jvmargs=-Xmx1536m -XX:MaxPermSize=3072m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8-
     ./gradlew clean
-    ./gradlew :app:assemble$2$3
-
-    adb uninstall "$appPackageName$countryName.$countryCode"
+    ./gradlew :app:assemble$countryCode$environmentCode
+    
     adb install "$apkPath"
-    
-    # To enable debug logging run
-    adb shell setprop log.tag.FA VERBOSE
-    
-    # To enable faster debug mode event logging run:
-    adb shell setprop debug.firebase.analytics.app "$appPackageName$countryName.$countryCode"
 
     clear
     show_bees_banner
@@ -130,24 +125,27 @@ function run_adb_install {
 }
 
 function create_menu_build_apk {
-    countryCode=""
-    envCode=""
+    local countryCodeRes=""
+    local envCodeRes=""
 
     # Country
     clear
     show_countries
     echo -n -e "\e[33m> Choose a Country: \e[0m"
     read countryChosen
-    countryCode=$(get_country_code_by_option $countryChosen)
-    countryName=$(get_country_name_by_option $countryChosen)
+
+    countryCodeRes=$(get_country_code_by_option $countryChosen)
+    countryNameRes=$(get_country_name_by_option $countryChosen)
 
     # Environments
     show_environments
     echo -n -e "\n\e[33m> Choose a Environment: \e[0m"
     read envChosen
-    envCode=$(get_environment_code_by_option $envChosen)
+    envCodeRes=$(get_environment_code_by_option $envChosen)
     
-    run_adb_install "$countryName" "$countryCode" "$envCode"
+    countryName="$countryNameRes"
+    countryCode="$countryCodeRes"
+    environmentCode="$envCodeRes"
 }
 
 #function setup_sit_environment { }
@@ -192,10 +190,10 @@ function get_environment_code_by_option {
 }
 
 function get_country_name_by_option {
-    optionChosen=$1
-    name=""
+    local optionChosen=$1
+    local name=""
 
-    index=0
+    local index=0
     for item in "${listCountries[@]}"
     do
         index=$(($index+1))
@@ -208,10 +206,10 @@ function get_country_name_by_option {
 }
 
 function get_country_code_by_option {
-    optionChosen=$1
-    code=""
+    local optionChosen=$1
+    local code=""
 
-    index=0
+    local index=0
     for item in "${listCountries[@]}"
     do
         index=$(($index+1))
@@ -224,8 +222,8 @@ function get_country_code_by_option {
 }
 
 function extract_code {
-    input="$1"
-    code=$(echo "$input" | grep -oP "(?<=#code=).*")
+    local input="$1"
+    local code=$(echo "$input" | grep -oP "(?<=#code=).*")
     echo "$code"
 }
 
@@ -240,9 +238,9 @@ function get_dependency_name {
 }
 
 function run_gradle {
-    path=$1
-    modulePath=$2
-    name=$3
+    local path=$1
+    local modulePath=$2
+    local name=$3
     
     clear
     echo -e "\e[1m\e[32m########## RUNNING: [$name] ##########\e[0m"
@@ -254,11 +252,8 @@ function run_gradle {
 
     if [ "$name" = "bees-android" ]; then
         ./gradlew clean
-        create_menu_build_apk "$path" "$modulePath" "$name"
     elif [ "$name" = "account-android" ]; then 
         moduleName=$(echo $modulePath$OrchestratorGradlePath | grep -oE '[^/]+$' | awk '{print $1}')
-        echo "2 ### MODULE NAME: $moduleName"
-
         ./gradlew :orchestrator:clean
         ./gradlew :orchestrator:build
         ./gradlew -Dorg.gradle.jvmargs=-Xmx1536m -XX:MaxPermSize=3072m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8-
@@ -434,7 +429,7 @@ function find_project_folder_path_by_project_name {
     fi
 }
 
-function build_projects_queue {
+function generate_artifacts {
     for number in $(echo "$listProjectChosen" | tr ',' ' '); do
         local index=$((number - 1))
         local projectPathSubFolder="${listProjectName[index]}"
@@ -495,4 +490,6 @@ function show_bees_banner {
 show_bees_banner
 menu_show_list_projects
 input_new_version_name
-build_projects_queue
+create_menu_build_apk
+generate_artifacts
+run_adb_install
