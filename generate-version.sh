@@ -42,6 +42,7 @@ listProjectName=(
 #   Project @aar reference
 customerServicesRef="implementation \"com.abinbev:customer_services:"
 orchestratorRef="orchestratorVersion" 
+patternImplementationProject="implementation [\"']com\.abinbev.*[.:][^:\"']*:[^:\"']*['\"]"
 
 #   APK generated root path
 rootPathApkGenerated="/home/wallace/Documents/bees-android/app/build/outputs/apk/"
@@ -325,24 +326,22 @@ function change_dependency_version {
 }
 
 function menu_choose_implementation {
-    local gradleFilePath="$1/features/orchestrator/build.gradle"
-    pattern="implementation [\"'\'']com\.abinbev.*[.:][^:\"'\'']*:[^:\"'\'']*['\'\"]"
-    patternToReplace="implementation [\"'\'']com\.abinbev.*[.:]"
+    local gradleFilePath="$1/sample-app/build.gradle"
 
     echo -e "\n\e[1mList of implementations found\e[0m"
-
-    lines=$(grep -E "$pattern" "$gradleFilePath")
-    if [ -z "$lines" ]; then
-        echo -e "\n\e[33mI could not find any occurrence.\nPlease, open the file and change the option manually. \e[0m"
-        exit 1
-    fi
 
     i=0
     while read -r line; do
         ((i++))
-        local lineFormatted=$(echo "$line" | sed 's/^[ \t]*//')
+        lineFormatted=$(echo "$line" | sed 's/^[[:space:]]*//')
         echo "[$i] $lineFormatted"
-    done <<< "$lines"
+        linesArray[$i]="$lineFormatted"
+    done < <(grep -E "$patternImplementationProject" "$gradleFilePath")
+
+    if [ $i -eq 0 ]; then
+        echo -e "\n\e[33mI could not find any occurrence.\nPlease, open the file and change the option manually. \e[0m"
+        exit 1
+    fi
 
     echo -n -e "\n\e[33m> choose an option: \e[0m"
     read implementationOption
@@ -350,22 +349,15 @@ function menu_choose_implementation {
     echo -n -e "\n\e[33m> new implementation version: \e[0m"
     read newVersion
 
-    i=0
-    lineTarget=""
-    newLine=""
-    while read -r line; do
-        ((i++))
+    for ((i = 1; i <= ${#linesArray[@]}; i++)); do
         if [ $implementationOption = $i ]; then
-            local lineTarget="$line"
-            local lineBeforeColon="${lineTarget%:*}:"
-            local prefix=$(echo "$lineBeforeColon" | grep -o "*['\'\"].*com")
-            local result="$prefix$lineBeforeColon"
-            local newLine="$result$newVersion\""
-            local lineFormatted=$(echo "$newLine" | sed "s/'/\"/g")
-
-            sed -i "s/$lineTarget/$lineFormatted/g" "$gradleFilePath"
+            line=${linesArray[$i]}
+            lineBeforeColon="${line%:*}:"
+            prefix=$(echo "$lineBeforeColon" | grep -o "*['\"].*com")
+            result=$(echo "$prefix$lineBeforeColon$newVersion\"" | sed "s/'/\"/g")
+            sed -i "s/$line/$result/g" "$gradleFilePath"
         fi
-    done <<< "$lines"
+    done
 }
 
 function change_implementation_project_version {
