@@ -325,10 +325,11 @@ function change_dependency_version {
     fi
 }
 
-function menu_choose_implementation {
-    local gradleFilePath="$1/sample-app/build.gradle"
+function menu_change_implementation_version {
+    local gradleFilePath="$1/build.gradle"
+    echo "GRADLE FILE PATH: $gradleFilePath"
 
-    echo -e "\n\e[1mList of implementations found\e[0m"
+    echo -e "\n\e[1miImplementation List\e[0m"
 
     i=0
     while read -r line; do
@@ -339,42 +340,33 @@ function menu_choose_implementation {
     done < <(grep -E "$patternImplementationProject" "$gradleFilePath")
 
     if [ $i -eq 0 ]; then
-        echo -e "\n\e[33mI could not find any occurrence.\nPlease, open the file and change the option manually. \e[0m"
+        echo -e "\e[33mNo occurrences found.\nIgnore if this project needs no changes, or open and edit it manually.\e[0m"
         exit 1
     fi
 
     echo -n -e "\n\e[33m> choose an option: \e[0m"
     read implementationOption
 
-    echo -n -e "\n\e[33m> new implementation version: \e[0m"
-    read newVersion
+    if [ -n "$implementationOption" ]; then
+        echo -n -e "\n\e[33m> new implementation version: \e[0m"
+        read newVersion
 
-    for ((i = 1; i <= ${#linesArray[@]}; i++)); do
-        if [ $implementationOption = $i ]; then
-            line=${linesArray[$i]}
-            lineBeforeColon="${line%:*}:"
-            prefix=$(echo "$lineBeforeColon" | grep -o "*['\"].*com")
-            result=$(echo "$prefix$lineBeforeColon$newVersion\"" | sed "s/'/\"/g")
-            sed -i "s/$line/$result/g" "$gradleFilePath"
-        fi
-    done
-}
-
-function change_implementation_project_version {
-    gradleFilePath=$1
-    projectRef=$2
-    newVersion=$3
-
-    newLine="$projectRef$newVersion\""
-    file="$gradleFilePath/build.gradle"
-
-    line=$(grep -n "^$projectRef" "$file" | cut -d ":" -f1)
-
-    sed -i "${line}s/$projectRef.*/$newLine/g" "$file"
+        for ((i = 1; i <= ${#linesArray[@]}; i++)); do
+            if [ $implementationOption = $i ]; then
+                line=${linesArray[$i]}
+                lineBeforeColon="${line%:*}:"
+                prefix=$(echo "$lineBeforeColon" | grep -o "*['\"].*com")
+                result=$(echo "$prefix$lineBeforeColon$newVersion\"" | sed "s/'/\"/g")
+                sed -i "s/$line/$result/g" "$gradleFilePath"
+            fi
+        done
+    else
+        echo -e "\e[33mNothing to update here. Moving next.\e[0m"
+    fi
 }
 
 function change_version_name {
-    projectFullPath=$1
+    local projectFullPath=$1
 
     echo -n -e "\e[33m> versionName [$name]: \e[0m"
     read newVersionName
@@ -382,53 +374,30 @@ function change_version_name {
     if [ -z "$newVersionName" ]; then
         echo -e "\e[33m> Version not updated. Keeping the current version.\e[0m"
     else
-        file="$projectFullPath/build.gradle"
-        line=$(grep -n "^versionName " "$file" | cut -d ":" -f1)
+        local file="$projectFullPath/build.gradle"
+        local line=$(grep -n "^versionName " "$file" | cut -d ":" -f1)
         sed -i "${line}s/versionName \".*./versionName \"$newVersionName\"/g" "$file"
     fi
 }
 
-function treat_account_android_subfolder {
-    projectFullPath=$1
-
-    # sample-app
-    gradleFullPath="$projectFullPath$accountSampleGradlePath"
-    echo -n -e "\e[33m> implementation project version: [sample-app]: \e[0m"
-    read sampleAppVersionName
-    versionNameTyped="$sampleAppVersionName"
-    change_implementation_project_version "$gradleFullPath" "$customerServicesRef" "$sampleAppVersionName"
-
-    # orchestrator
-    gradleFullPath="$projectFullPath$accountOrchestratorGradlePath"
-    echo -n -e "\e[33m> Repeat the same 'implementation project version' for [orchestrator]? (y/n):\e[0m"
-    read answerRepeat
-
-    change_version_name "$gradleFullPath"
-
-    if [ "$answerRepeat" = "y" ]; then
-        change_implementation_project_version "$gradleFullPath" "$customerServicesRef" "$versionNameTyped"
-    else
-        echo -n -e "\e[33m> implementation project version: [orchestrator]: \e[0m"
-        read orchestratorVersionName
-
-        change_implementation_project_version "$gradleFullPath" "$customerServicesRef" "$orchestratorVersionName"
-    fi
-}
-
 function change_version_by_project_name {
-    projectFullPath=$1
-    projectPathSubFolder=$2
-    name=$3
-    projectGradlePath=$(get_build_gradle_subfolder_path $projectPathSubFolder)
+    local projectFullPath=$1
+    local projectPathSubFolder=$2
+    local name=$3
+    local projectGradlePath=$(get_build_gradle_subfolder_path $projectPathSubFolder)
 
     echo -e "\n\n\e[1mModifying [$name]\e[0m"
-    if [ "$name" = "account-android" ]; then
-        #treat_account_android_subfolder "$projectFullPath$projectGradlePath" 
-        menu_choose_implementation "$projectFullPath$projectGradlePath" "$projectGradlePath"
-    elif [ "$name" = "bees-android" ]; then
+    if [ "$name" = "bees-android" ]; then
+        change_version_name "$projectFullPath$projectGradlePath"
         change_dependency_version "$projectFullPath$projectGradlePath" "$orchestratorRef"
+    elif [ "$name" = "account-android" ]; then
+        change_version_name "$projectFullPath$accountOrchestratorGradlePath"
+
+        menu_change_implementation_version "$projectFullPath$accountOrchestratorGradlePath"
+        menu_change_implementation_version "$projectFullPath$accountSampleGradlePath"
     else
         change_version_name "$projectFullPath$projectGradlePath"
+        menu_change_implementation_version "$projectFullPath$projectGradlePath"
     fi
 }
 
@@ -450,7 +419,7 @@ function find_project_folder_path_by_project_name {
             ((i++))
         done
 
-        echo -n -e "\n\e[33m> Select the correct to follow:\e[0m"
+        echo -n -e "\n\e[33m> Select the correct path to follow: \e[0m"
         read optionChosen
 
         folderPath=""
