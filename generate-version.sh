@@ -324,6 +324,50 @@ function change_dependency_version {
     fi
 }
 
+function menu_choose_implementation {
+    local gradleFilePath="$1/features/orchestrator/build.gradle"
+    pattern="implementation [\"'\'']com\.abinbev.*[.:][^:\"'\'']*:[^:\"'\'']*['\'\"]"
+    patternToReplace="implementation [\"'\'']com\.abinbev.*[.:]"
+
+    echo -e "\n\e[1mList of implementations found\e[0m"
+
+    lines=$(grep -E "$pattern" "$gradleFilePath")
+    if [ -z "$lines" ]; then
+        echo -e "\n\e[33mI could not find any occurrence.\nPlease, open the file and change the option manually. \e[0m"
+        exit 1
+    fi
+
+    i=0
+    while read -r line; do
+        ((i++))
+        local lineFormatted=$(echo "$line" | sed 's/^[ \t]*//')
+        echo "[$i] $lineFormatted"
+    done <<< "$lines"
+
+    echo -n -e "\n\e[33m> choose an option: \e[0m"
+    read implementationOption
+
+    echo -n -e "\n\e[33m> new implementation version: \e[0m"
+    read newVersion
+
+    i=0
+    lineTarget=""
+    newLine=""
+    while read -r line; do
+        ((i++))
+        if [ $implementationOption = $i ]; then
+            local lineTarget="$line"
+            local lineBeforeColon="${lineTarget%:*}:"
+            local prefix=$(echo "$lineBeforeColon" | grep -o "*['\'\"].*com")
+            local result="$prefix$lineBeforeColon"
+            local newLine="$result$newVersion\""
+            local lineFormatted=$(echo "$newLine" | sed "s/'/\"/g")
+
+            sed -i "s/$lineTarget/$lineFormatted/g" "$gradleFilePath"
+        fi
+    done <<< "$lines"
+}
+
 function change_implementation_project_version {
     gradleFilePath=$1
     projectRef=$2
@@ -387,7 +431,8 @@ function change_version_by_project_name {
 
     echo -e "\n\n\e[1mModifying [$name]\e[0m"
     if [ "$name" = "account-android" ]; then
-        treat_account_android_subfolder "$projectFullPath$projectGradlePath" 
+        #treat_account_android_subfolder "$projectFullPath$projectGradlePath" 
+        menu_choose_implementation "$projectFullPath$projectGradlePath" "$projectGradlePath"
     elif [ "$name" = "bees-android" ]; then
         change_dependency_version "$projectFullPath$projectGradlePath" "$orchestratorRef"
     else
@@ -449,9 +494,9 @@ function input_new_version_name {
         name=$(echo $projPath | awk -F/ '{print $NF}')
         gradlePath=$(get_build_gradle_subfolder_path $projectPathSubFolder)
 
-        run_specs "$projPath" "$name"
+        #run_specs "$projPath" "$name"
         change_version_by_project_name "$projPath" "$projectPathSubFolder" "$name"
-        run_gradle "$projPath" "$gradlePath" "$name"
+        #run_gradle "$projPath" "$gradlePath" "$name"
 
         echo -e "\n"
     done
