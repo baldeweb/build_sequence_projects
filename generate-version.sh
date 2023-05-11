@@ -130,7 +130,7 @@ function create_menu_build_apk {
     # Country
     clear
     show_countries
-    echo -n -e "\e[33m> Choose a Country: \e[0m"
+    echo -n -e "\n\e[33m> Type an option: \e[0m"
     read countryChosen
 
     countryCodeRes=$(get_country_code_by_option $countryChosen)
@@ -138,7 +138,7 @@ function create_menu_build_apk {
 
     # Environments
     show_environments
-    echo -n -e "\n\e[33m> Choose a Environment: \e[0m"
+    echo -n -e "\n\e[33m> Type an option: \e[0m"
     read envChosen
     envCodeRes=$(get_environment_code_by_option $envChosen)
     
@@ -147,10 +147,8 @@ function create_menu_build_apk {
     environmentCode="$envCodeRes"
 }
 
-#function setup_sit_environment { }
-
 function show_environments {
-    echo -e "\n\n\e[1mLIST OF ENVIRONMENTS\e[0m"
+    echo -e "\n\n\e[1mENVIRONMENT LIST\e[0m"
     index=0
     for item in "${listEnvironments[@]}"
     do
@@ -161,7 +159,7 @@ function show_environments {
 }
 
 function show_countries {
-    echo -e "\e[1mLIST OF COUNTRIES\e[0m"
+    echo -e "\n\e[1mCOUNTRY LIST\e[0m"
 
     index=0
     for item in "${listCountries[@]}"
