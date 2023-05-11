@@ -30,7 +30,6 @@ listCountries=(
 listEnvironments=(
     "name=QA#code=Qa"
     "name=SIT#code=Sit"
-    "name=UAT#code=Uat"
 )
 
 listProjectName=(
