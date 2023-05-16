@@ -47,7 +47,7 @@ listProjectName=(
     "bees-android/bees-actions"
     "bees-browse-android"
     "bees-cart-checkout-android"
-    "bees-cart-checkout-android-commons/cartcheckout-commons"
+    "bees-cart-checkout-commons-android/cartcheckout-commons"
     "bees-coupons-android/bees-coupons"
     "bees-customer-services-android/customer_services"
     "bees-datasource-android/bees-datasource"
@@ -60,53 +60,75 @@ listProjectName=(
     "deliver-analytics-android/features/analytics"
     "deliver-android"
     "deliver-inventory-validation-android/features/inventory"
-    "deliver-pix-android/features/pix"
-    "deliver-pricing-engine-android/features/pricing-engine"
-    "deliver-questionnaire-android/features/questionnaire"
-    "deliver-route-optimizer-android/features/route-optimizer"
-    "deliver-sdk-android/sdk-network"
+    "deliver-pix-android"
+    "deliver-pricing-engine-android"
+    "deliver-questionnaire-android"
+    "deliver-route-optimizer-android"
+    "deliver-sdk-android"
     "deliver-tour-android/features/tour"
     "fintech-wallet-onboarding-android/wallet-onboarding"
     "insights-android/insights"
     "invoice-android/invoice"
-    "newapp-android"
     "payment-android/payment"
     "payment-selection-android/paymentselection"
     "recommender-android/beerrecommender"
     "rewards-android/rewards"
-    "server-drive-ui-orchestrator-android/sd-ui-orchestrator"
+    "server-driven-ui-orchestrator-android/sd-ui-orchestrator"
     "tapwiser-android"
 )
 
 listProjectChosen=()
 
 #   Project @aar reference
-customerServicesRef="implementation \"com.abinbev:customer_services:"
-orchestratorRef="orchestratorVersion" 
-patternImplementationProject="implementation [\"']com\.abinbev.*[.:][^:\"']*:[^:\"']*['\"]"
+beesBrowserRef="implementation \"com.abinbev:accessmanagement-iam:" #bees-browser-android $browseVersion | $homeVersion | $searchVersion | $ppVersion | dealsVersion = versions.deals | $browseCommonsVersion | $browseDomainVersion | $browseDataVersion # clonar projeto e olhar onde estão sendo usadas as variavies
+beesCartCheckout="???" # Versions.
+beesCartCheckoutCommons="implementation 'com.abinbev:shopexcommons:"
+beesRio="implementation 'com.abinbev:shopexcommons:"
 
-#   APK generated root path
+#   Project Versions Ref
+orchestratorRef="orchestratorVersion"
+beesRio="" # change versionName reading from version.properties file
+
+#   Paths | Patterns
 rootPathApkGenerated="/home/wallace/Documents/bees-android/app/build/outputs/apk/"
+patternImplementationProject="implementation [\"']com\.abinbev.*[.:][^:\"']*:[^:\"']*['\"]"
 
 #   Projects with sub folders
 sampleGradlePath="/sample-app"
+appGradlePath="/app"
+
 accountOrchestratorGradlePath="/features/orchestrator"
-b2bMobileAndroidTicketsBeesAdapterGradlePath="/bees-adapter"
-b2bMobileAndroidTicketsCrsGradlePath="/crs"
-beesAccountInfoAndroidAccountGradlePath="/account-info"
-beesAccountSelectionAndroidAccountSelectionGradlePath="/account-selection"
-beesBrowseAndroidBrowseGradlePath="/bees-browse"
-beesBrowseAndroidHome="/bees-home"
-beesBrowseAndroidProductPageGradlePath="/bees-product-page"
-beesBrowseAndroidSearchGradlePath="/bees-search"
-beesBrowseAndroidCommonsGradlePath="/browse-commons"
-beesBrowseAndroidDataGradlePath="/browse-data"
-beesBrowseAndroidDomainGradlePath="/browse-domain"
-beesBrowseAndroidDealsGradlePath="/deals"
+
+b2bMobileTicketsBeesAdapterGradlePath="/bees-adapter"
+b2bMobileTicketsCrsGradlePath="/crs"
+
+beesAccountInfoGradlePath="/account-info"
+beesAccountSelectionGradlePath="/account-selection"
+
+beesBrowseGradlePath="/bees-browse"
+beesBrowseHomeGradlePath="/bees-home"
+beesBrowseProductPageGradlePath="/bees-product-page"
+beesBrowseSearchGradlePath="/bees-search"
+beesBrowseCommonsGradlePath="/browse-commons"
+beesBrowseDataGradlePath="/browse-data"
+beesBrowseDomainGradlePath="/browse-domain"
+beesBrowseDealsGradlePath="/deals"
+
 beesCartCheckoutAndroidCartGradlePath="/bees-cart"
 beesCartCheckoutAndroidCheckoutGradlePath="/bees-checkout"
 beesCartCheckoutAndroidPaymentSelection="/bees-payment-selection"
 beesCartCheckoutAndroidCommonsGradlePath="/cartcheckout-commons"
+
+deliverAccessControlGradlePath="/features/access-control"
+deliverAnalyticsGradlePath="/features/analytics"
+deliverInventoryValidationGradlePath="/features/inventory"
+deliverPixGradlePath="/features/pix"
+deliverPricingEngineGradlePath="/features/pricing-engine"
+deliverQuestionnaireGradlePath="/features/questionnaire"
+deliverRouteOptimizerGradlePath="/features/route-optimizer"
+deliverSdkNetworkGradlePath="/sdk-network"
+deliverTourGradlePath="/features/tour"
+
 tapwiserAndroidFuzzNetworkGradlePath="/FuzzNetwork"
 tapwiserAndroidFuzzParserGradlePath="/FuzzParser"
 tapwiserAndroidFuzzReflectionGradlePath="/FuzzReflection"
@@ -114,6 +136,7 @@ tapwiserAndroidFuzzVolleyExecutorGradlePath="/FuzzVolleyExecutor"
 tapwiserAndroidLifeCycleGradlePath="/Libraries/LifeCycle"
 tapwiserAndroidSdkGradlePath="/surveymonkey_android_sdk"
 
+#   Functions
 function get_build_gradle_subfolder_path {
     projName=$1
     if [[ $projName == *"/"* ]]; then
@@ -448,31 +471,31 @@ function change_version_by_project_name {
         menu_change_implementation_version "$projectFullPath$accountOrchestratorGradlePath"
         menu_change_implementation_version "$projectFullPath$sampleGradlePath"
     elif [ "$name" = "b2b-mobile-android-tickets" ]; then
-        change_version_name "$projectFullPath$b2bMobileAndroidTicketsCrsGradlePath"
+        change_version_name "$projectFullPath$b2bMobileTicketsCrsGradlePath"
 
-        menu_change_implementation_version "$projectFullPath$b2bMobileAndroidTicketsBeesAdapterGradlePath"
-        menu_change_implementation_version "$projectFullPath$b2bMobileAndroidTicketsCrsGradlePath"
+        menu_change_implementation_version "$projectFullPath$b2bMobileTicketsBeesAdapterGradlePath"
+        menu_change_implementation_version "$projectFullPath$b2bMobileTicketsCrsGradlePath"
     elif [ "$name" = "bees-account-info-android" ]; then
-        change_version_name "$projectFullPath$beesAccountInfoAndroidAccountGradlePath"
+        change_version_name "$projectFullPath$beesAccountInfoGradlePath"
 
-        menu_change_implementation_version "$projectFullPath$beesAccountInfoAndroidAccountGradlePath"
+        menu_change_implementation_version "$projectFullPath$beesAccountInfoGradlePath"
         menu_change_implementation_version "$projectFullPath$sampleGradlePath"
     elif [ "$name" = "bees-account-selection-android" ]; then
-        change_version_name "$projectFullPath$beesAccountSelectionAndroidAccountSelectionGradlePath"
+        change_version_name "$projectFullPath$beesAccountSelectionGradlePath"
 
-        menu_change_implementation_version "$projectFullPath$beesAccountSelectionAndroidAccountSelectionGradlePath"
+        menu_change_implementation_version "$projectFullPath$beesAccountSelectionGradlePath"
         menu_change_implementation_version "$projectFullPath$sampleGradlePath"
     elif [ "$name" = "bees-browse-android" ]; then
-        change_version_name "$projectFullPath$beesBrowseAndroidBrowseGradlePath"
+        change_version_name "$projectFullPath$beesBrowseGradlePath"
 
-        menu_change_implementation_version "$projectFullPath$beesBrowseAndroidBrowseGradlePath"
-        menu_change_implementation_version "$projectFullPath$beesBrowseAndroidHome"
-        menu_change_implementation_version "$projectFullPath$beesBrowseAndroidProductPageGradlePath"
-        menu_change_implementation_version "$projectFullPath$beesBrowseAndroidSearchGradlePath"
-        menu_change_implementation_version "$projectFullPath$beesBrowseAndroidCommonsGradlePath"
-        menu_change_implementation_version "$projectFullPath$beesBrowseAndroidDataGradlePath"
-        menu_change_implementation_version "$projectFullPath$beesBrowseAndroidDomainGradlePath"
-        menu_change_implementation_version "$projectFullPath$beesBrowseAndroidDealsGradlePath"
+        menu_change_implementation_version "$projectFullPath$beesBrowseGradlePath"
+        menu_change_implementation_version "$projectFullPath$beesBrowseHomeGradlePath"
+        menu_change_implementation_version "$projectFullPath$beesBrowseProductPageGradlePath"
+        menu_change_implementation_version "$projectFullPath$beesBrowseSearchGradlePath"
+        menu_change_implementation_version "$projectFullPath$beesBrowseCommonsGradlePath"
+        menu_change_implementation_version "$projectFullPath$beesBrowseDataGradlePath"
+        menu_change_implementation_version "$projectFullPath$beesBrowseDomainGradlePath"
+        menu_change_implementation_version "$projectFullPath$beesBrowseDealsGradlePath"
     elif [ "$name" = "bees-cart-checkout-android" ]; then
         change_version_name "$projectFullPath$beesCartCheckoutAndroidCartGradlePath"
 
@@ -480,6 +503,40 @@ function change_version_by_project_name {
         menu_change_implementation_version "$projectFullPath$beesCartCheckoutAndroidCheckoutGradlePath"
         menu_change_implementation_version "$projectFullPath$beesCartCheckoutAndroidPaymentSelection"
         menu_change_implementation_version "$projectFullPath$beesCartCheckoutAndroidCommonsGradlePath"
+    elif [ "$name" = "deliver-access-control-android" ]; then
+        change_version_name "$projectFullPath$deliverAccessControlGradlePath" # features/access-control - version.properties
+        menu_change_implementation_version "$projectFullPath$deliverAccessControlGradlePath"
+    elif [ "$name" = "deliver-analytics-android" ]; then
+        change_version_name "$projectFullPath$deliverAnalyticsGradlePath" # features/analytics - version.properties
+    elif [ "$name" = "deliver-android" ]; then
+        change_version_name "$projectFullPath$appGradlePath" # version.properties
+    elif [ "$name" = "deliver-inventory-validation-android" ]; then
+        change_version_name "$projectFullPath$deliverInventoryValidationGradlePath" # features/inventory - version.properties
+    elif [ "$name" = "deliver-pix-android" ]; then
+        change_version_name "$projectFullPath$deliverPixGradlePath" # features/pix - version.properties
+
+        menu_change_implementation_version "$projectFullPath$deliverPixGradlePath"
+        menu_change_implementation_version "$projectFullPath$appGradlePath"
+    elif [ "$name" = "deliver-pricing-engine-android" ]; then
+        change_version_name "$projectFullPath$deliverPricingEngineGradlePath" # features/pricing-engine - version.properties
+        
+        menu_change_implementation_version "$projectFullPath$appGradlePath"
+        menu_change_implementation_version "$projectFullPath$deliverPricingEngineGradlePath"
+    elif [ "$name" = "deliver-questionnaire-android" ]; then
+        change_version_name "$projectFullPath$deliverQuestionnaireGradlePath" # features/questionnaire - version.properties
+
+        menu_change_implementation_version "$projectFullPath$deliverQuestionnaireGradlePath"
+        menu_change_implementation_version "$projectFullPath$appGradlePath"
+    elif [ "$name" = "deliver-route-optimizer-android" ]; then
+        change_version_name "$projectFullPath$deliverRouteOptimizerGradlePath" # features/route-optimizer - version.properties
+
+        menu_change_implementation_version "$projectFullPath$deliverRouteOptimizerGradlePath"
+        menu_change_implementation_version "$projectFullPath$appGradlePath"
+    elif [ "$name" = "deliver-sdk-android" ]; then
+        change_version_name "$projectFullPath$deliverSdkNetworkGradlePath" # sdk-network - version.properties
+        change_version_name "$projectFullPath$appGradlePath" # app - version.properties
+    elif [ "$name" = "deliver-tour-android" ]; then
+        change_version_name "$projectFullPath$deliverTourGradlePath" # features/tour - version.properties
     elif [ "$name" = "tapwiser-android" ]; then
         change_version_name "$projectFullPath$tapwiserAndroidFuzzNetworkGradlePath"
 
