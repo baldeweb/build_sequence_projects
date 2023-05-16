@@ -440,6 +440,26 @@ function menu_change_implementation_version {
     fi
 }
 
+function change_version_properties {
+    local projectFullPath=$1
+
+    echo -n -e "\e[33m> new version for [$name](or just press ENTER to skip): \e[0m"
+    read newVersion
+    
+    if [ -z "$newVersion" ]; then
+        echo -e "\e[33mVersion not updated. Keeping the current version.\e[0m\n"
+    else
+        local file="$projectFullPath/version.properties"
+        > "$file"
+        local major=$(echo "$newVersion" | cut -d'.' -f1)
+        local minor=$(echo "$newVersion" | cut -d'.' -f2)
+        local patch=$(echo "$newVersion" | cut -d'.' -f3)
+        echo "major=$major" >> "$file"
+        echo "minor=$minor" >> "$file"
+        echo "patch=$patch" >> "$file"
+    fi
+}
+
 function change_version_name {
     local projectFullPath=$1
 
@@ -504,39 +524,39 @@ function change_version_by_project_name {
         menu_change_implementation_version "$projectFullPath$beesCartCheckoutAndroidPaymentSelection"
         menu_change_implementation_version "$projectFullPath$beesCartCheckoutAndroidCommonsGradlePath"
     elif [ "$name" = "deliver-access-control-android" ]; then
-        change_version_name "$projectFullPath$deliverAccessControlGradlePath" # features/access-control - version.properties
+        change_version_properties "$projectFullPath$deliverAccessControlGradlePath" # features/access-control - version.properties
         menu_change_implementation_version "$projectFullPath$deliverAccessControlGradlePath"
     elif [ "$name" = "deliver-analytics-android" ]; then
-        change_version_name "$projectFullPath$deliverAnalyticsGradlePath" # features/analytics - version.properties
+        change_version_properties "$projectFullPath$deliverAnalyticsGradlePath" # features/analytics - version.properties
     elif [ "$name" = "deliver-android" ]; then
-        change_version_name "$projectFullPath$appGradlePath" # version.properties
+        change_version_properties "$projectFullPath$appGradlePath" # version.properties
     elif [ "$name" = "deliver-inventory-validation-android" ]; then
-        change_version_name "$projectFullPath$deliverInventoryValidationGradlePath" # features/inventory - version.properties
+        change_version_properties "$projectFullPath$deliverInventoryValidationGradlePath" # features/inventory - version.properties
     elif [ "$name" = "deliver-pix-android" ]; then
-        change_version_name "$projectFullPath$deliverPixGradlePath" # features/pix - version.properties
+        change_version_properties "$projectFullPath$deliverPixGradlePath" # features/pix - version.properties
 
         menu_change_implementation_version "$projectFullPath$deliverPixGradlePath"
         menu_change_implementation_version "$projectFullPath$appGradlePath"
     elif [ "$name" = "deliver-pricing-engine-android" ]; then
-        change_version_name "$projectFullPath$deliverPricingEngineGradlePath" # features/pricing-engine - version.properties
+        change_version_properties "$projectFullPath$deliverPricingEngineGradlePath" # features/pricing-engine - version.properties
         
         menu_change_implementation_version "$projectFullPath$appGradlePath"
         menu_change_implementation_version "$projectFullPath$deliverPricingEngineGradlePath"
     elif [ "$name" = "deliver-questionnaire-android" ]; then
-        change_version_name "$projectFullPath$deliverQuestionnaireGradlePath" # features/questionnaire - version.properties
+        change_version_properties "$projectFullPath$deliverQuestionnaireGradlePath" # features/questionnaire - version.properties
 
         menu_change_implementation_version "$projectFullPath$deliverQuestionnaireGradlePath"
         menu_change_implementation_version "$projectFullPath$appGradlePath"
     elif [ "$name" = "deliver-route-optimizer-android" ]; then
-        change_version_name "$projectFullPath$deliverRouteOptimizerGradlePath" # features/route-optimizer - version.properties
+        change_version_properties "$projectFullPath$deliverRouteOptimizerGradlePath" # features/route-optimizer - version.properties
 
         menu_change_implementation_version "$projectFullPath$deliverRouteOptimizerGradlePath"
         menu_change_implementation_version "$projectFullPath$appGradlePath"
     elif [ "$name" = "deliver-sdk-android" ]; then
-        change_version_name "$projectFullPath$deliverSdkNetworkGradlePath" # sdk-network - version.properties
-        change_version_name "$projectFullPath$appGradlePath" # app - version.properties
+        change_version_properties "$projectFullPath$deliverSdkNetworkGradlePath" # sdk-network - version.properties
+        change_version_properties "$projectFullPath$appGradlePath" # app - version.properties
     elif [ "$name" = "deliver-tour-android" ]; then
-        change_version_name "$projectFullPath$deliverTourGradlePath" # features/tour - version.properties
+        change_version_properties "$projectFullPath$deliverTourGradlePath" # features/tour - version.properties
     elif [ "$name" = "tapwiser-android" ]; then
         change_version_name "$projectFullPath$tapwiserAndroidFuzzNetworkGradlePath"
 
