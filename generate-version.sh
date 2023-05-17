@@ -307,31 +307,22 @@ function run_gradle {
     clear
     echo -e "\e[1m\e[32m########## RUNNING: [$name] ##########\e[0m"
 
-    cd $path
-    ./gradlew prepareKotlinBuildScriptModel
-    ./gradlew compileDebugKotlin
-    ./gradlew sync
+    cd "$path"
+    ./gradlew prepareKotlinBuildScriptModel compileDebugKotlin sync
 
-    if [ "$name" = "bees-android" ]; then
-        ./gradlew clean
-    elif [ "$name" = "account-android" ]; then 
-        moduleName=$(echo $modulePath$OrchestratorGradlePath | grep -oE '[^/]+$' | awk '{print $1}')
-        ./gradlew :orchestrator:clean
-        ./gradlew :orchestrator:build
-        ./gradlew -Dorg.gradle.jvmargs=-Xmx1536m -XX:MaxPermSize=3072m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8-
-        ./gradlew :orchestrator:assemble
-        ./gradlew :orchestrator:publishToMavenLocal
-    else
-        moduleName=$(echo $modulePath | grep -oE '[^/]+$' | awk '{print $1}')
-        echo "3 ### MODULE NAME: $moduleName"
-
-        ./gradlew :$moduleName:clean
-        ./gradlew :$moduleName:build
-        ./gradlew -Dorg.gradle.jvmargs=-Xmx1536m -XX:MaxPermSize=3072m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8 build
-        ./gradlew :$moduleName:clean
-        ./gradlew :$moduleName:assemble
-        ./gradlew :$moduleName:publishToMavenLocal
-    fi
+    case "$name" in
+        "bees-android")
+            ./gradlew clean
+            ;;
+        "account-android")
+            moduleName=$(basename "$modulePath$OrchestratorGradlePath")
+            ./gradlew :orchestrator:clean :orchestrator:build -Dorg.gradle.jvmargs=-Xmx1536m -XX:MaxPermSize=3072m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8- :orchestrator:assemble :orchestrator:publishToMavenLocal
+            ;;
+        *)
+            moduleName=$(basename "$modulePath")
+            ./gradlew ":$moduleName:clean" ":$moduleName:build" -Dorg.gradle.jvmargs=-Xmx1536m -XX:MaxPermSize=3072m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8 build ":$moduleName:assemble" ":$moduleName:publishToMavenLocal"
+            ;;
+    esac
 }
 
 function run_specs {
