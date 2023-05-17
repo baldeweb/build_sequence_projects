@@ -41,8 +41,8 @@ listProjectName=(
     "b2b-tapwiser-browse-android/browse"
     "b2b-tapwiser-order-history-android/order_tracking"
     "b2b-tapwiser-rating-android/rating"
-    "bees-account-info-android"
-    "bees-account-selection-android"
+    "bees-account-info-android/account-info"
+    "bees-account-selection-android/account-selection"
     "account-android"
     "bees-android/bees-actions"
     "bees-browse-android"
@@ -51,21 +51,21 @@ listProjectName=(
     "bees-coupons-android/bees-coupons"
     "bees-customer-services-android/customer_services"
     "bees-datasource-android/bees-datasource"
-    "bees-rio-android"
+    "bees-rio-android/rio"
     "bees-search-commons-android/search-commons"
     "bees-shopex-commons-android/shopex-commons"
     "bees-social-android/bees-social-media"
     "credit-android/credit"
-    "deliver-access-control-android/features/access-control"
-    "deliver-analytics-android/features/analytics"
+    "deliver-access-control-android"
+    "deliver-analytics-android"
     "deliver-android"
-    "deliver-inventory-validation-android/features/inventory"
+    "deliver-inventory-validation-android"
     "deliver-pix-android"
     "deliver-pricing-engine-android"
     "deliver-questionnaire-android"
     "deliver-route-optimizer-android"
-    "deliver-sdk-android"
-    "deliver-tour-android/features/tour"
+    "deliver-sdk-android/sdk-network"
+    "deliver-tour-android"
     "fintech-wallet-onboarding-android/wallet-onboarding"
     "insights-android/insights"
     "invoice-android/invoice"
@@ -95,10 +95,10 @@ accountOrchestratorGradlePath="/features/orchestrator"
 b2bMobileTicketsBeesAdapterGradlePath="/bees-adapter"
 b2bMobileTicketsCrsGradlePath="/crs"
 
-beesAccountInfoGradlePath="/account-info"
-beesAccountSelectionGradlePath="/account-selection"
+beesBrowseGradlePath="/bees-browse"
 
-beesRioGradlePath="/rio"
+beesCartCheckoutCartGradlePath="/bees-cart"
+beesCartCheckoutCheckoutGradlePath="/bees-checkout"
 
 deliverAccessControlGradlePath="/features/access-control"
 deliverAnalyticsGradlePath="/features/analytics"
@@ -107,7 +107,6 @@ deliverPixGradlePath="/features/pix"
 deliverPricingEngineGradlePath="/features/pricing-engine"
 deliverQuestionnaireGradlePath="/features/questionnaire"
 deliverRouteOptimizerGradlePath="/features/route-optimizer"
-deliverSdkNetworkGradlePath="/sdk-network"
 deliverTourGradlePath="/features/tour"
 
 tapwiserAndroidFuzzNetworkGradlePath="/FuzzNetwork"
@@ -179,13 +178,10 @@ function run_adb_install {
     adb install "$apkPath"
 
     clear
-    show_bees_banner
 
     echo -e "\e[1m\e[33mPROCESS COMPLETED WITH TOTAL SUCCESS! BzZzzZzzz...\e[0m"
     echo -e "\e[3m(A bug free version... I hope...)\e[0m\n"
     echo -e "\e[1mNow, open your app manually and enjoy it! \(^^)/ \e[0m\n"
-
-    exit 0
 }
 
 function create_menu_build_apk {
@@ -299,9 +295,95 @@ function get_dependency_name {
     echo "$1" | sed -e 's/Version.*//' -e 's/.* //'
 }
 
+function get_last_folder {
+    echo $(echo $1 | grep -oE '[^/]+$' | awk '{print $1}')
+}
+
+function get_build_module_gradle_path {
+    local name=$1
+    local path=$2
+
+    case "$name" in
+        "b2b-mobile-android-tickets")
+            # TODO: look for a way to ask whick module must generate the artifact
+            list=(
+                "$(get_last_folder "$b2bMobileTicketsCrsGradlePath")"
+                "$(get_last_folder "$b2bMobileTicketsBeesAdapterGradlePath")"
+            )
+            echo $list
+            ;;
+        "account-android")
+            echo $(get_last_folder "$accountOrchestratorGradlePath")
+            ;;
+        "bees-browse-android")
+            # TODO: look for a way to ask whick module must generate the artifact
+            list=(
+                "$(get_last_folder "$beesBrowseGradlePath")"
+                "$(get_last_folder "$beesBrowseHomeGradlePath")"
+                "$(get_last_folder "$beesBrowseProductPageGradlePath")"
+                "$(get_last_folder "$beesBrowseSearchGradlePath")"
+                "$(get_last_folder "$beesBrowseCommonsGradlePath")"
+                "$(get_last_folder "$beesBrowseDataGradlePath")"
+                "$(get_last_folder "$beesBrowseDomainGradlePath")"
+                "$(get_last_folder "$beesBrowseDealsGradlePath")"
+            )
+            echo $list
+            ;;
+        "bees-cart-checkout-android")
+            # TODO: look for a way to ask whick module must generate the artifact
+            list=(
+                "$(get_last_folder "$beesCartCheckoutCartGradlePath")"
+                "$(get_last_folder "$beesCartCheckoutCheckoutGradlePath")"
+                "$(get_last_folder "$beesCartCheckoutPaymentSelectionGradlePath")"
+                "$(get_last_folder "$beesCartCheckoutCartcheckoutCommonsGradlePath")"
+            )
+            echo $list
+            ;;
+        "deliver-access-control-android")
+            echo $(get_last_folder "$deliverAccessControlGradlePath")
+            ;;
+        "deliver-analytics-android")
+            echo $(get_last_folder "$deliverAnalyticsGradlePath")
+            ;;
+        "deliver-inventory-validation-android")
+            echo $(get_last_folder "$deliverInventoryValidationGradlePath")
+            ;;
+        "deliver-pix-android")
+            echo $(get_last_folder "$deliverPixGradlePath")
+            ;;
+        "deliver-pricing-engine-android")
+            echo $(get_last_folder "$deliverPricingEngineGradlePath")
+            ;;
+        "deliver-questionnaire-android")
+            echo $(get_last_folder "$deliverQuestionnaireGradlePath")
+            ;;
+        "deliver-route-optimizer-android")
+            echo $(get_last_folder "$deliverRouteOptimizerGradlePath")
+            ;;
+        "deliver-tour-android")
+            echo $(get_last_folder "$deliverTourGradlePath")
+            ;;
+        "tapwiser-android")
+            # TODO: look for a way to ask whick module must generate the artifact
+            list=(
+                "$(get_last_folder "$tapwiserAndroidFuzzNetworkGradlePath")"
+                "$(get_last_folder "$tapwiserAndroidFuzzParserGradlePath")"
+                "$(get_last_folder "$tapwiserAndroidFuzzReflectionGradlePath")"
+                "$(get_last_folder "$tapwiserAndroidFuzzVolleyExecutorGradlePath")"
+                "$(get_last_folder "$tapwiserAndroidLifeCycleGradlePath")"
+                "$(get_last_folder "$tapwiserAndroidSdkGradlePath")"
+            )
+            echo $list
+            ;;
+        *)
+            echo $(get_last_folder "$path")
+            ;;
+    esac
+}
+
 function run_gradle {
     local path=$1
-    local modulePath=$2
+    gradlePath=$2
     local name=$3
     
     clear
@@ -310,19 +392,30 @@ function run_gradle {
     cd "$path"
     ./gradlew prepareKotlinBuildScriptModel compileDebugKotlin sync
 
-    case "$name" in
-        "bees-android")
+    if [ -z "$gradlePath" ]; then
+        local listSubFolder=$(get_build_module_gradle_path "$name" "$path")
+        
+        for i in "${!listSubFolder[@]}"; do
+            local module="${listSubFolder[$i]}"
+
+            ./gradlew :$module:clean
+            ./gradlew :$module:build
+            ./gradlew -Dorg.gradle.jvmargs=-Xmx1536m -XX:MaxPermSize=3072m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8 build
+            ./gradlew :$module:assemble
+            ./gradlew :$module:publishToMavenLocal
+        done
+    else
+        if [ "$name" = "bees-android" ]; then
             ./gradlew clean
-            ;;
-        "account-android")
-            moduleName=$(basename "$modulePath$OrchestratorGradlePath")
-            ./gradlew :orchestrator:clean :orchestrator:build -Dorg.gradle.jvmargs=-Xmx1536m -XX:MaxPermSize=3072m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8- :orchestrator:assemble :orchestrator:publishToMavenLocal
-            ;;
-        *)
-            moduleName=$(basename "$modulePath")
-            ./gradlew ":$moduleName:clean" ":$moduleName:build" -Dorg.gradle.jvmargs=-Xmx1536m -XX:MaxPermSize=3072m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8 build ":$moduleName:assemble" ":$moduleName:publishToMavenLocal"
-            ;;
-    esac
+        else
+            moduleName=$(get_last_folder "$gradlePath")
+            ./gradlew :$moduleName:clean
+            ./gradlew :$moduleName:build
+            ./gradlew -Dorg.gradle.jvmargs=-Xmx1536m -XX:MaxPermSize=3072m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8 build
+            ./gradlew :$moduleName:assemble
+            ./gradlew :$moduleName:publishToMavenLocal
+        fi
+    fi
 }
 
 function run_specs {
@@ -496,6 +589,7 @@ function change_version_by_project_name {
     echo -e "\n\n\e[1mModifying [$name]\e[0m"
     if [ "$name" = "bees-android" ]; then
         change_version_name "$projectFullPath$projectGradlePath"
+        #   TODO: change to other versions too
         change_dependency_version "$projectFullPath$projectGradlePath" "$orchestratorRef"
     elif [ "$name" = "account-android" ]; then
         change_version_name "$projectFullPath$accountOrchestratorGradlePath"
@@ -508,21 +602,21 @@ function change_version_by_project_name {
         menu_change_implementation_version "$projectFullPath$b2bMobileTicketsBeesAdapterGradlePath"
         menu_change_implementation_version "$projectFullPath$b2bMobileTicketsCrsGradlePath"
     elif [ "$name" = "bees-account-info-android" ]; then
-        change_version_name "$projectFullPath$beesAccountInfoGradlePath"
+        change_version_name "$projectFullPath$projectGradlePath"
 
-        menu_change_implementation_version "$projectFullPath$beesAccountInfoGradlePath"
+        menu_change_implementation_version "$projectFullPath$projectGradlePath"
         menu_change_implementation_version "$projectFullPath$sampleGradlePath"
     elif [ "$name" = "bees-account-selection-android" ]; then
-        change_version_name "$projectFullPath$beesAccountSelectionGradlePath"
+        change_version_name "$projectFullPath$projectGradlePath"
 
-        menu_change_implementation_version "$projectFullPath$beesAccountSelectionGradlePath"
+        menu_change_implementation_version "$projectFullPath$projectGradlePath"
         menu_change_implementation_version "$projectFullPath$sampleGradlePath"
     elif [ "$name" = "bees-browse-android" ]; then
         change_version_ext_block "$projectFullPath"
     elif [ "$name" = "bees-cart-checkout-android" ]; then
         change_version_ext_block "$projectFullPath"
     elif [ "$name" = "bees-rio-android" ]; then
-        change_version_properties "$projectFullPath$beesRioGradlePath"
+        change_version_properties "$projectFullPath$projectGradlePath"
         menu_change_implementation_version "$projectFullPath$appGradlePath"
     elif [ "$name" = "deliver-access-control-android" ]; then
         change_version_properties "$projectFullPath$deliverAccessControlGradlePath"
@@ -554,7 +648,7 @@ function change_version_by_project_name {
         menu_change_implementation_version "$projectFullPath$deliverRouteOptimizerGradlePath"
         menu_change_implementation_version "$projectFullPath$appGradlePath"
     elif [ "$name" = "deliver-sdk-android" ]; then
-        change_version_properties "$projectFullPath$deliverSdkNetworkGradlePath"
+        change_version_properties "$projectFullPath$projectGradlePath"
         change_version_properties "$projectFullPath$appGradlePath"
     elif [ "$name" = "deliver-tour-android" ]; then
         change_version_properties "$projectFullPath$deliverTourGradlePath"
@@ -617,14 +711,13 @@ function generate_artifacts {
         find_project_folder_path_by_project_name "$projectRootName"
 
         local name=$(basename "$projPath")
-        local gradlePath=$(get_build_gradle_subfolder_path "$projectPathSubFolder")
-        
+        gradlePath=$(get_build_gradle_subfolder_path "$projectPathSubFolder")
         run_gradle "$projPath" "$gradlePath" "$name"
     done
 }
 
 function input_new_version_name {
-    read -p $'\e[33m> Project Numbers: \e[0m' listProjects
+    read -p $'\n\e[33m> Project Numbers: \e[0m' listProjects
     listProjectChosen=$listProjects
 
     for number in $(echo "$listProjects" | tr ',' ' '); do
@@ -649,19 +742,20 @@ function menu_show_list_projects {
     for i in "${!listProjectName[@]}"; do
         echo "[$((i+1))] $(get_project_name "${listProjectName[$i]}")"
     done
-    echo
 }
 
 function show_bye_bees_banner {
     echo -e "\n\e[33m===== Thank you, for using it! ===================================================================\e[0m"
     bees_banner
     echo -e "\e[33m===================================================================================== See ya! ====\e[0m\n\n"
+    exit 0
 }
 
 function show_welcome_bees_banner {
     echo -e "\n\e[33m===== Welcome to... ==============================================================================\e[0m"
     bees_banner
     echo -e "\e[33m================================================================================= version 1.0 ====\e[0m\n\n"
+    exit 0
 }
 
 function bees_banner {
