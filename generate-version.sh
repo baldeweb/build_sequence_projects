@@ -51,7 +51,7 @@ listProjectName=(
     "bees-coupons-android/bees-coupons"
     "bees-customer-services-android/customer_services"
     "bees-datasource-android/bees-datasource"
-    "bees-rio-android/rio"
+    "bees-rio-android"
     "bees-search-commons-android/search-commons"
     "bees-shopex-commons-android/shopex-commons"
     "bees-social-android/bees-social-media"
@@ -79,15 +79,8 @@ listProjectName=(
 
 listProjectChosen=()
 
-#   Project @aar reference
-beesBrowserRef="implementation \"com.abinbev:accessmanagement-iam:" #bees-browser-android $browseVersion | $homeVersion | $searchVersion | $ppVersion | dealsVersion = versions.deals | $browseCommonsVersion | $browseDomainVersion | $browseDataVersion # clonar projeto e olhar onde estão sendo usadas as variavies
-beesCartCheckout="???" # Versions.
-beesCartCheckoutCommons="implementation 'com.abinbev:shopexcommons:"
-beesRio="implementation 'com.abinbev:shopexcommons:"
-
 #   Project Versions Ref
 orchestratorRef="orchestratorVersion"
-beesRio="" # change versionName reading from version.properties file
 
 #   Paths | Patterns
 rootPathApkGenerated="/home/wallace/Documents/bees-android/app/build/outputs/apk/"
@@ -105,19 +98,7 @@ b2bMobileTicketsCrsGradlePath="/crs"
 beesAccountInfoGradlePath="/account-info"
 beesAccountSelectionGradlePath="/account-selection"
 
-beesBrowseGradlePath="/bees-browse"
-beesBrowseHomeGradlePath="/bees-home"
-beesBrowseProductPageGradlePath="/bees-product-page"
-beesBrowseSearchGradlePath="/bees-search"
-beesBrowseCommonsGradlePath="/browse-commons"
-beesBrowseDataGradlePath="/browse-data"
-beesBrowseDomainGradlePath="/browse-domain"
-beesBrowseDealsGradlePath="/deals"
-
-beesCartCheckoutAndroidCartGradlePath="/bees-cart"
-beesCartCheckoutAndroidCheckoutGradlePath="/bees-checkout"
-beesCartCheckoutAndroidPaymentSelection="/bees-payment-selection"
-beesCartCheckoutAndroidCommonsGradlePath="/cartcheckout-commons"
+beesRioGradlePath="/rio"
 
 deliverAccessControlGradlePath="/features/access-control"
 deliverAnalyticsGradlePath="/features/analytics"
@@ -440,6 +421,44 @@ function menu_change_implementation_version {
     fi
 }
 
+function change_version_ext_block {
+    local fileFullPath="$1/build.gradle"
+
+    isBlockstart=false
+    isBlockend=false
+
+    # read each line of the file
+    while IFS= read -r line; do
+        # Checks if it found the start of the code block
+        if [[ $line == *"ext "*{ ]]; then
+            isBlockstart=true
+            continue
+        fi
+
+        # Checks if it found the end of the code block
+        if [[ $line == *}* ]] && $isBlockstart; then
+            isBlockend=true
+        fi
+
+        # Displays the lines within the code block
+        if $isBlockstart && ! $isBlockend; then
+            if [[ $line =~ .*Version\ *=\ *\".*\" ]]; then
+                name=$(echo "$line" | awk -F '=' '{print $1}')
+
+                echo -n -e "\e[33m> new version for [$name](or just press ENTER to skip): \e[0m"
+                read newVersion
+
+                if [ -z "$newVersion" ]; then
+                    echo -e "\e[33mVersion not updated. Keeping the current version.\e[0m\n"
+                else
+                    lineChanged=$(echo "$line" | sed "s/\".*\"/\"$newVersion\"/")
+                fi
+            fi
+        fi
+
+    done < "$fileFullPath"
+}
+
 function change_version_properties {
     local projectFullPath=$1
 
@@ -454,9 +473,11 @@ function change_version_properties {
         local major=$(echo "$newVersion" | cut -d'.' -f1)
         local minor=$(echo "$newVersion" | cut -d'.' -f2)
         local patch=$(echo "$newVersion" | cut -d'.' -f3)
+        local fix=$(echo "$newVersion" | cut -d'.' -f4)
         echo "major=$major" >> "$file"
         echo "minor=$minor" >> "$file"
         echo "patch=$patch" >> "$file"
+        echo "fix=$fix" >> "$file"
     fi
 }
 
@@ -506,57 +527,46 @@ function change_version_by_project_name {
         menu_change_implementation_version "$projectFullPath$beesAccountSelectionGradlePath"
         menu_change_implementation_version "$projectFullPath$sampleGradlePath"
     elif [ "$name" = "bees-browse-android" ]; then
-        change_version_name "$projectFullPath$beesBrowseGradlePath"
-
-        menu_change_implementation_version "$projectFullPath$beesBrowseGradlePath"
-        menu_change_implementation_version "$projectFullPath$beesBrowseHomeGradlePath"
-        menu_change_implementation_version "$projectFullPath$beesBrowseProductPageGradlePath"
-        menu_change_implementation_version "$projectFullPath$beesBrowseSearchGradlePath"
-        menu_change_implementation_version "$projectFullPath$beesBrowseCommonsGradlePath"
-        menu_change_implementation_version "$projectFullPath$beesBrowseDataGradlePath"
-        menu_change_implementation_version "$projectFullPath$beesBrowseDomainGradlePath"
-        menu_change_implementation_version "$projectFullPath$beesBrowseDealsGradlePath"
+        change_version_ext_block "$projectFullPath"
     elif [ "$name" = "bees-cart-checkout-android" ]; then
-        change_version_name "$projectFullPath$beesCartCheckoutAndroidCartGradlePath"
-
-        menu_change_implementation_version "$projectFullPath$beesCartCheckoutAndroidCartGradlePath"
-        menu_change_implementation_version "$projectFullPath$beesCartCheckoutAndroidCheckoutGradlePath"
-        menu_change_implementation_version "$projectFullPath$beesCartCheckoutAndroidPaymentSelection"
-        menu_change_implementation_version "$projectFullPath$beesCartCheckoutAndroidCommonsGradlePath"
+        change_version_ext_block "$projectFullPath"
+    elif [ "$name" = "bees-rio-android" ]; then
+        change_version_properties "$projectFullPath$beesRioGradlePath"
+        menu_change_implementation_version "$projectFullPath$appGradlePath"
     elif [ "$name" = "deliver-access-control-android" ]; then
-        change_version_properties "$projectFullPath$deliverAccessControlGradlePath" # features/access-control - version.properties
+        change_version_properties "$projectFullPath$deliverAccessControlGradlePath"
         menu_change_implementation_version "$projectFullPath$deliverAccessControlGradlePath"
     elif [ "$name" = "deliver-analytics-android" ]; then
-        change_version_properties "$projectFullPath$deliverAnalyticsGradlePath" # features/analytics - version.properties
+        change_version_properties "$projectFullPath$deliverAnalyticsGradlePath"
     elif [ "$name" = "deliver-android" ]; then
-        change_version_properties "$projectFullPath$appGradlePath" # version.properties
+        change_version_properties "$projectFullPath$appGradlePath"
     elif [ "$name" = "deliver-inventory-validation-android" ]; then
-        change_version_properties "$projectFullPath$deliverInventoryValidationGradlePath" # features/inventory - version.properties
+        change_version_properties "$projectFullPath$deliverInventoryValidationGradlePath"
     elif [ "$name" = "deliver-pix-android" ]; then
-        change_version_properties "$projectFullPath$deliverPixGradlePath" # features/pix - version.properties
+        change_version_properties "$projectFullPath$deliverPixGradlePath"
 
         menu_change_implementation_version "$projectFullPath$deliverPixGradlePath"
         menu_change_implementation_version "$projectFullPath$appGradlePath"
     elif [ "$name" = "deliver-pricing-engine-android" ]; then
-        change_version_properties "$projectFullPath$deliverPricingEngineGradlePath" # features/pricing-engine - version.properties
+        change_version_properties "$projectFullPath$deliverPricingEngineGradlePath"
         
         menu_change_implementation_version "$projectFullPath$appGradlePath"
         menu_change_implementation_version "$projectFullPath$deliverPricingEngineGradlePath"
     elif [ "$name" = "deliver-questionnaire-android" ]; then
-        change_version_properties "$projectFullPath$deliverQuestionnaireGradlePath" # features/questionnaire - version.properties
+        change_version_properties "$projectFullPath$deliverQuestionnaireGradlePath"
 
         menu_change_implementation_version "$projectFullPath$deliverQuestionnaireGradlePath"
         menu_change_implementation_version "$projectFullPath$appGradlePath"
     elif [ "$name" = "deliver-route-optimizer-android" ]; then
-        change_version_properties "$projectFullPath$deliverRouteOptimizerGradlePath" # features/route-optimizer - version.properties
+        change_version_properties "$projectFullPath$deliverRouteOptimizerGradlePath"
 
         menu_change_implementation_version "$projectFullPath$deliverRouteOptimizerGradlePath"
         menu_change_implementation_version "$projectFullPath$appGradlePath"
     elif [ "$name" = "deliver-sdk-android" ]; then
-        change_version_properties "$projectFullPath$deliverSdkNetworkGradlePath" # sdk-network - version.properties
-        change_version_properties "$projectFullPath$appGradlePath" # app - version.properties
+        change_version_properties "$projectFullPath$deliverSdkNetworkGradlePath"
+        change_version_properties "$projectFullPath$appGradlePath"
     elif [ "$name" = "deliver-tour-android" ]; then
-        change_version_properties "$projectFullPath$deliverTourGradlePath" # features/tour - version.properties
+        change_version_properties "$projectFullPath$deliverTourGradlePath"
     elif [ "$name" = "tapwiser-android" ]; then
         change_version_name "$projectFullPath$tapwiserAndroidFuzzNetworkGradlePath"
 
