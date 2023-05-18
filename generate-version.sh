@@ -548,8 +548,6 @@ function change_versions_dependencies_block {
                 read newVersion
 
                 local lineTarget=$(echo "$item" | grep -o '^[[:space:]]*def .*')
-                echo "### change_versions_dependencies_block: $lineTarget"
-                echo "### change_versions_dependencies_block : gradleFilePath : $gradleFilePath"
                 sed -i "${line}s/$lineTarget/    def $versionName = \"$newVersion\"/g" "$gradleFilePath"
                 break
             fi
@@ -558,42 +556,62 @@ function change_versions_dependencies_block {
 }
 
 function change_version_ext_block {
-    local fileFullPath="$1/build.gradle"
+    local gradleFilePath="$1/build.gradle"
 
-    isBlockstart=false
-    isBlockend=false
+    local flag_encontrado=false
+    local listVersionLines=()
 
-    # read each line of the file
-    while IFS= read -r line; do
-        # Checks if it found the start of the code block
-        if [[ $line == *"ext "*{ ]]; then
-            isBlockstart=true
+    while IFS= read -r lineFound; do
+        # Checks if the line contains the start of the 'dependencies {' block
+        if [[ $lineFound == *"ext {"* ]]; then
+            flag_encontrado=true
             continue
         fi
 
-        # Checks if it found the end of the code block
-        if [[ $line == *}* ]] && $isBlockstart; then
-            isBlockend=true
-        fi
+        # If block 'dependencies {}' was found, show subsequent lines until finding closing '}'
+        if $flag_encontrado; then
+            # Checks if the line contains the pattern 'def xxx = "0.00"'
+            if [[ $lineFound =~ .*Version\ *=\ *\".*\" ]]; then
+                listVersionLines+=("$lineFound")
+            fi
 
-        # Displays the lines within the code block
-        if $isBlockstart && ! $isBlockend; then
-            if [[ $line =~ .*Version\ *=\ *\".*\" ]]; then
-                name=$(echo "$line" | awk -F '=' '{print $1}')
-
-                echo -n -e "\e[33m> new version for [$name](or just press ENTER to skip): \e[0m"
-                read newVersion
-
-                if [ -z "$newVersion" ]; then
-                    echo -e "\e[33mVersion not updated. Keeping the current version.\e[0m\n"
-                else
-                    lineChanged=$(echo "$line" | sed "s/\".*\"/\"$newVersion\"/")
-                fi
+            # Checks if the line contains the closing '}'
+            if [[ $lineFound == *"}"* ]]; then
                 break
             fi
         fi
 
-    done < "$fileFullPath"
+    done < "$gradleFilePath"
+
+    for i in "${!listVersionLines[@]}"; do
+        echo "[$((i+1))] ${listVersionLines[$i]}"
+    done
+
+    echo -n -e "\e[33m> Choose an option(or just press ENTER to skip): \e[0m"
+    read optionChosen
+
+    if [ -z "$optionChosen" ]; then
+        echo -e "\e[33mVersion not updated. Keeping the current versions.\e[0m\n"
+    else
+        for i in "${!listVersionLines[@]}"; do
+            local item="${listVersionLines[$i]}"
+            if [ $(($i+1)) = $optionChosen ]; then
+            #if echo "$item" | grep -q -E '[A-Za-z]+Version\s*=\s*".*"'; then
+                local versionName=$(echo "$item" | grep -o -E '    [A-Za-z]+Version')
+                
+                echo -n -e "\e[33m> Type the new version: \e[0m"
+                read -r newVersion
+                
+                local lineTarget=$(echo "$item" | grep -o -E '^[[:space:]]*[A-Za-z]+Version')
+                local existingText=$(echo "$item" | grep -o -E '".*"')
+                sed -i "${line}s/$lineTarget.*/    ${versionName} = \"$newVersion\"/g" "$gradleFilePath"
+                sed -i "${line}s/$existingText/\" $newVersion\"/g" "$gradleFilePath"
+                sync
+                break
+            fi
+            break
+        done
+    fi
 }
 
 function change_version_properties {
