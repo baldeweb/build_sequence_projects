@@ -79,9 +79,6 @@ listProjectName=(
 
 listProjectChosen=()
 
-#   Project Versions Ref
-orchestratorRef="orchestratorVersion"
-
 #   Paths | Patterns
 rootPathApkGenerated="/home/wallace/Documents/bees-android/app/build/outputs/apk/"
 patternImplementationProject="implementation [\"']com\.abinbev.*[.:][^:\"']*:[^:\"']*['\"]"
