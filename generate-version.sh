@@ -178,7 +178,7 @@ function run_adb_install {
     
     adb install "$apkPath"
 
-    #clear
+    clear
 
     echo -e "\e[1m\e[33mPROCESS COMPLETED WITH TOTAL SUCCESS! BzZzzZzzz...\e[0m"
     echo -e "\e[3m(A bug free version... I hope...)\e[0m\n"
@@ -190,7 +190,7 @@ function create_menu_build_apk {
     local envCodeRes=""
 
     # Country
-    #clear
+    clear
     show_countries
     echo -n -e "\n\e[33m> Type an option: \e[0m"
     read countryChosen
@@ -227,7 +227,7 @@ function show_countries {
     for item in "${listCountries[@]}"
     do
         index=$(($index+1))
-        name=$(extract_name $item)
+        name=$(extract_name "$item")
         echo "[$index] $name"
     done
 }
@@ -287,9 +287,7 @@ function extract_code {
 }
 
 function extract_name {
-    local text=$1
-    local name=$(echo $text | grep -oP '(?<=name=)[^#]+')
-    echo $name
+    echo $(echo $1 | grep -oP '(?<=name=)[^#]+')
 }
 
 function get_dependency_name {
@@ -384,10 +382,10 @@ function get_build_module_gradle_path {
 
 function run_gradle {
     local path=$1
-    gradlePath=$2
+    local gradlePath=$2
     local name=$3
     
-    #clear
+    clear
     echo -e "\e[1m\e[32m########## RUNNING: [$name] ##########\e[0m"
 
     cd "$path"
@@ -420,11 +418,11 @@ function run_gradle {
 }
 
 function run_specs {
-    pathSpecs=$1
-    projectName=$2
-    specsBranchName=""
+    local pathSpecs=$1
+    local projectName=$2
+    local specsBranchName=""
 
-    #clear
+    clear
     echo -e "\e[1mModifying: $projectName\e[0m"
     echo -n -e "\e[33m> Branch target for [sdk-android-specs](or just press ENTER to choose 'master'): \e[0m"
     read specsBranchName
@@ -454,7 +452,7 @@ function menu_change_implementation_version {
     i=0
     while read -r line; do
         ((i++))
-        lineFormatted=$(echo "$line" | sed 's/^[[:space:]]*//')
+        local lineFormatted=$(echo "$line" | sed 's/^[[:space:]]*//')
         echo "[$i] $lineFormatted"
         linesArray[$i]="$lineFormatted"
     done < <(grep -E "$patternImplementationProject" "$gradleFilePath")
@@ -471,11 +469,12 @@ function menu_change_implementation_version {
 
             for ((i = 1; i <= ${#linesArray[@]}; i++)); do
                 if [ $implementationOption = $i ]; then
-                    line=${linesArray[$i]}
-                    lineBeforeColon="${line%:*}:"
-                    prefix=$(echo "$lineBeforeColon" | grep -o "*['\"].*com")
-                    result=$(echo "$prefix$lineBeforeColon$newVersion\"" | sed "s/'/\"/g")
+                    local line=${linesArray[$i]}
+                    local lineBeforeColon="${line%:*}:"
+                    local prefix=$(echo "$lineBeforeColon" | grep -o "*['\"].*com")
+                    local result=$(echo "$prefix$lineBeforeColon$newVersion\"" | sed "s/'/\"/g")
                     sed -i "s/$line/$result/g" "$gradleFilePath"
+                    break
                 fi
             done
         else
@@ -508,25 +507,24 @@ function change_dependency_version {
 
 function change_versions_dependencies_block {
     local gradleFilePath="$1/build.gradle"
-    echo "##### GRADLE FILE PATH: $gradleFilePath"
     local flag_encontrado=false
-    listVersionLines=()
+    local listVersionLines=()
 
     while IFS= read -r lineFound; do
-        # Verifica se a linha contém o início do bloco 'dependencies {'
+        # Checks if the line contains the start of the 'dependencies {' block
         if [[ $lineFound == *"dependencies {"* ]]; then
             flag_encontrado=true
             continue
         fi
 
-        # Se o bloco 'dependencies {}' foi encontrado, mostra as linhas subsequentes até encontrar o fechamento '}'
+        # If block 'dependencies {}' was found, show subsequent lines until finding closing '}'
         if $flag_encontrado; then
-            # Verifica se a linha contém o padrão 'def xxx = "111"'
+            # Checks if the line contains the pattern 'def xxx = "0.00"'
             if [[ $lineFound =~ ^[[:space:]]*def[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*=[[:space:]]*\".*\" ]]; then
                 listVersionLines+=("$lineFound")
             fi
 
-            # Verifica se a linha contém o fechamento '}'
+            # Checks if the line contains the closing '}'
             if [[ $lineFound == *"}"* ]]; then
                 break
             fi
@@ -534,7 +532,6 @@ function change_versions_dependencies_block {
 
     done < "$gradleFilePath"
 
-    # replace the line
     for i in "${!listVersionLines[@]}"; do
         echo "[$((i+1))] ${listVersionLines[$i]}"
     done
@@ -542,20 +539,25 @@ function change_versions_dependencies_block {
     echo -n -e "\e[33m> Choose an option(or just press ENTER to skip): \e[0m"
     read optionChosen
 
-    for i in "${!listVersionLines[@]}"; do
-        item="${listVersionLines[i]}"
-        if [ $(($i+1)) = $optionChosen ]; then
-            versionName=$(echo "$item" | grep -o 'def .* =' | sed 's/def \(.*\) =/\1/')
+    if [ -z "$optionChosen" ]; then
+        echo -e "\e[33mVersion not updated. Keeping the current versions.\e[0m\n"
+    else
+        for i in "${!listVersionLines[@]}"; do
+            local item="${listVersionLines[$i]}"
+            if [ $(($i+1)) = $optionChosen ]; then
+                local versionName=$(echo "$item" | grep -o 'def .* =' | sed 's/def \(.*\) =/\1/')
 
-            #echo "$item - $versionName"
-            echo -n -e "\e[33m> new version(or just press ENTER to skip): \e[0m"
-            read newVersion
+                echo -n -e "\e[33m> Type the new version: \e[0m"
+                read newVersion
 
-            lineTarget=$(echo "$item" | grep -o '^[[:space:]]*def .*')
-
-            sed -i "${line}s/$lineTarget/    def $versionName = \"$newVersion\"/g" "$gradleFilePath"
-        fi
-    done
+                local lineTarget=$(echo "$item" | grep -o '^[[:space:]]*def .*')
+                echo "### change_versions_dependencies_block: $lineTarget"
+                echo "### change_versions_dependencies_block : gradleFilePath : $gradleFilePath"
+                sed -i "${line}s/$lineTarget/    def $versionName = \"$newVersion\"/g" "$gradleFilePath"
+                break
+            fi
+        done
+    fi
 }
 
 function change_version_ext_block {
@@ -590,6 +592,7 @@ function change_version_ext_block {
                 else
                     lineChanged=$(echo "$line" | sed "s/\".*\"/\"$newVersion\"/")
                 fi
+                break
             fi
         fi
 
@@ -642,7 +645,6 @@ function change_version_by_project_name {
     echo -e "\n\n\e[1mModifying [$name]\e[0m"
     if [ "$name" = "bees-android" ]; then
         change_version_name "$projectFullPath$projectGradlePath"
-        #   TODO: change to other versions too
         change_versions_dependencies_block "$projectFullPath$projectGradlePath"
     elif [ "$name" = "account-android" ]; then
         change_version_name "$projectFullPath$accountOrchestratorGradlePath"
@@ -784,7 +786,7 @@ function input_new_version_name {
         local name=$(basename "$projPath")
         local gradlePath=$(get_build_gradle_subfolder_path "$projectPathSubFolder")
     
-        #run_specs "$projPath" "$name"
+        run_specs "$projPath" "$name"
         change_version_by_project_name "$projPath" "$projectPathSubFolder" "$name"
     done
 }
@@ -807,7 +809,8 @@ function show_bye_bees_banner {
 function show_welcome_bees_banner {
     echo -e "\n\e[33m===== Welcome to... ==============================================================================\e[0m"
     bees_banner
-    echo -e "\e[33m================================================================================= version 1.0 ====\e[0m\n\n"
+    echo -e "\e[33m================================================================================= Version 1.0 ====\e[0m"
+    echo -e "\e[33m================================================================== Author: Wallace Baldenebre ====\e[0m\n\n"
 }
 
 function bees_banner {
