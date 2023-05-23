@@ -4,6 +4,7 @@ environmentCode=""
 countryName=""
 countryCode=""
 projPath=""
+beesAndroidProjPath=""
 
 listCountries=(
     "name=Argentina#code=Ar"
@@ -80,7 +81,7 @@ listProjectName=(
 listProjectChosen=()
 
 #   Paths | Patterns
-rootPathApkGenerated="/home/wallace/Documents/bees-android/app/build/outputs/apk/"
+pathApkGenerated="/app/build/outputs/apk/"
 patternImplementationProject="implementation [\"']com\.abinbev.*[.:][^:\"']*:[^:\"']*['\"]"
 patternDefVersion="^def\s+[a-zA-Z_][a-zA-Z0-9_]*\s*=\s*\"[0-9]+\.\""
 
@@ -163,7 +164,7 @@ function run_adb_install {
     countryName=$(echo "$countryName" | tr '[:upper:]' '[:lower:]')
     countryCode=$(echo "$countryCode" | tr '[:upper:]' '[:lower:]')
     environmentCode=$(echo "$environmentCode" | tr '[:upper:]' '[:lower:]')
-    apkPath="$rootPathApkGenerated$countryCode/$environmentCode/app-$countryCode-$environmentCode.apk"
+    apkPath="$beesAndroidProjPath$pathApkGenerated$countryCode/$environmentCode/app-$countryCode-$environmentCode.apk"
     appPackageName="com.abinbev.android.tapwiser.bees"
 
     countryCode=$(to_lowercase $countryCode)
@@ -415,30 +416,38 @@ function run_gradle {
 }
 
 function run_specs {
-    local pathSpecs=$1
+    local projPath=$1
     local projectName=$2
     local specsBranchName=""
+    local pathSpecs="$projPath/sdk-android-specs"
 
     clear
     echo -e "\e[1mModifying: $projectName\e[0m"
-    echo -n -e "\e[33m> Branch target for [sdk-android-specs](or just press ENTER to choose 'master'): \e[0m"
+    echo -e "\n\e[1mType a branch name for [sdk-android-specs](or you can choose any option listed below): \e[0m"
+    echo -e "- press ENTER to choose the branch 'master'"
+    echo -e "- type the letter 'n' to skip"
+    echo -n -e "\n\e[33m> Type a branch name or execute an option: \e[0m"
     read specsBranchName
 
-    if [ -z "$specsBranchName" ]; then
-        specsBranchName="master"
-        echo -e "\e[32mBranch 'master' chosen.\e[0m"
+    if [ "$specsBranchName" = "n" ]; then
+        echo -e "\e[33mSpecs Routines: Skipped\e[0m"
     else
-        echo -e "\e[32mBranch $specsBranchName chosen.\e[0m"
+        if [ -z "$specsBranchName" ]; then
+            specsBranchName="master"
+            echo -e "\e[32mBranch 'master' chosen.\e[0m"
+        else
+            echo -e "\e[32mBranch $specsBranchName chosen.\e[0m"
+            echo -e "\n\e[3mPlease wait... Running specs routines...\e[0m\n"
+
+            cd "$pathSpecs"
+            git fetch
+            git checkout $specsBranchName
+            git reset --hard origin/$specsBranchName
+            cd "$projPath"
+
+            echo -e "\e[1m\e[32mSpecs Routines: Success ✓\e[0m\n"
+        fi
     fi
-    echo -e "\n\e[3mPlease wait... Running specs routines...\e[0m\n"
-
-    cd "$pathSpecs"
-    git fetch
-    git checkout $specsBranchName
-    git reset --hard origin/$specsBranchName
-    cd ..
-
-    echo -e "\e[1m\e[32mSpecs Routines: Success ✓\e[0m\n"
 }
 
 function menu_change_implementation_version {
@@ -768,6 +777,10 @@ function find_project_folder_path_by_project_name {
         done
 
         projPath="$folderPath"
+    fi
+
+    if [ "$folderNameTarget" = "bees-android" ]; then 
+        beesAndroidProjPath="$projPath"
     fi
 }
 
