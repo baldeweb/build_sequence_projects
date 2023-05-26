@@ -34,6 +34,7 @@ listEnvironments=(
 )
 
 listProjectName=(
+    "bees-android/bees-actions"
     "access-management-android/accessmanagement-iam"
     "b2b-mobile-android-cart/cart"
     "b2b-mobile-android-checkout/checkout"
@@ -45,7 +46,6 @@ listProjectName=(
     "bees-account-info-android/account-info"
     "bees-account-selection-android/account-selection"
     "account-android"
-    "bees-android/bees-actions"
     "bees-browse-android"
     "bees-cart-checkout-android"
     "bees-cart-checkout-commons-android/cartcheckout-commons"
@@ -434,19 +434,20 @@ function run_specs {
     else
         if [ -z "$specsBranchName" ]; then
             specsBranchName="master"
-            echo -e "\e[32mBranch 'master' chosen.\e[0m"
+            echo -e "\e[32mBranch 'master' was chosen.\e[0m"
         else
-            echo -e "\e[32mBranch $specsBranchName chosen.\e[0m"
-            echo -e "\n\e[3mPlease wait... Running specs routines...\e[0m\n"
-
-            cd "$pathSpecs"
-            git fetch
-            git checkout $specsBranchName
-            git reset --hard origin/$specsBranchName
-            cd "$projPath"
-
-            echo -e "\e[1m\e[32mSpecs Routines: Success ✓\e[0m\n"
+            echo -e "\e[32mBranch $specsBranchName was chosen.\e[0m"
         fi
+
+        echo -e "\n\e[3mPlease wait... Running specs routines...\e[0m\n"
+
+        cd "$pathSpecs"
+        git fetch
+        git checkout $specsBranchName
+        git reset --hard origin/$specsBranchName
+        cd "$projPath"
+
+        echo -e "\e[1m\e[32mSpecs Routines: Success ✓\e[0m\n"
     fi
 }
 
@@ -538,11 +539,13 @@ function change_versions_dependencies_block {
 
     done < "$gradleFilePath"
 
+    echo -e "\e[1mChoose an option below to change the version number:\e[0m"
+
     for i in "${!listVersionLines[@]}"; do
         echo "[$((i+1))] ${listVersionLines[$i]}"
     done
 
-    echo -n -e "\e[33m> Choose an option(or just press ENTER to skip): \e[0m"
+    echo -n -e "\n\e[33m> Type an option(or just press ENTER to skip):\e[0m"
     read optionChosen
 
     if [ -z "$optionChosen" ]; then
@@ -592,11 +595,13 @@ function change_version_ext_block {
 
     done < "$gradleFilePath"
 
+    echo -e "\e[1mChoose an option below to change the version number:\e[0m"
+
     for i in "${!listVersionLines[@]}"; do
         echo "[$((i+1))] ${listVersionLines[$i]}"
     done
 
-    echo -n -e "\e[33m> Choose an option(or just press ENTER to skip): \e[0m"
+    echo -n -e "\n\e[33m> Type an option(or just press ENTER to skip):\e[0m"
     read optionChosen
 
     if [ -z "$optionChosen" ]; then
