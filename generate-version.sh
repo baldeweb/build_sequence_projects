@@ -539,13 +539,13 @@ function change_versions_dependencies_block {
 
     done < "$gradleFilePath"
 
-    echo -e "\e[1mChoose an option below to change the version number:\e[0m"
+    echo -e "\e[1mChoose an option below to change the version number\e[0m"
 
     for i in "${!listVersionLines[@]}"; do
         echo "[$((i+1))] ${listVersionLines[$i]}"
     done
 
-    echo -n -e "\n\e[33m> Type an option(or just press ENTER to skip):\e[0m"
+    echo -n -e "\n\e[33m> Type an option(or just press ENTER to skip): \e[0m"
     read optionChosen
 
     if [ -z "$optionChosen" ]; then
